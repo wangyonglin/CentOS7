@@ -30,3 +30,52 @@ setenforce 0                  ##设置SELinux 成为permissive模式
 修改/etc/selinux/config 文件
 
 将SELINUX=enforcing改为SELINUX=disabled
+
+#使用logrotate管理nginx日志文件
+描述：linux日志文件如果不定期清理，会填满整个磁盘。这样会很危险，因此日志管理是系统管理员日常工作之一。我们可以使用"logrotate"来管理linux日志文件，它可以实现日志的自动滚动，日志归档等功能。下面以nginx日志文件来讲解下logrotate的用法。
+
+配置：
+1、在/etc/logrotate.d目录下创建一个nginx的配置文件"nginx"配置内容如下
+#vim /etc/logrotate.d/nginx
+/usr/local/nginx/logs/*.log {
+daily
+rotate 5
+missingok
+notifempty
+sharedscripts
+postrotate
+    if [ -f /usr/local/nginx/logs/nginx.pid ]; then
+        kill -USR1 `cat /usr/local/nginx/logs/nginx.pid`
+    fi
+endscript
+}
+
+保存退出。
+
+2、执行logrotate
+#/usr/sbin/logrotate -f /etc/logrotate.d/nginx
+
+在/usr/local/nginx/logs目录中会产生
+error.log
+error.log.1
+说明logrotate配置成功。
+
+3、让logrotate每天进行一次滚动,在crontab中添加一行定时脚本。
+#crontab -e
+59 23 * * *  /usr/sbin/logrotate -f /etc/logrotate.d/nginx
+
+每天23点59分进行日志滚动
+
+4、配置文件说明
+daily：日志文件每天进行滚动
+rotate：保留最5次滚动的日志
+notifempty：日志文件为空不进行滚动
+sharedscripts：运行postrotate脚本
+下面是一个脚本
+postrotate
+    if [ -f /usr/local/nginx/logs/nginx.pid ]; then
+        kill -USR1 `cat /usr/local/nginx/logs/nginx.pid`
+    fi
+endscript
+
+脚本让nginx重新生成日志文件。
