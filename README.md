@@ -1,5 +1,5 @@
 # CentOS7
-#ssh-keygen -t rsa -C "admin@redname.com"
+#ssh-keygen -t rsa -C "admin@wangyonglin.com"
 git add --all
 #
 git commit -m 'first commit'
